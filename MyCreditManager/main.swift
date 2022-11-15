@@ -2,8 +2,8 @@ import Foundation
 
 //MARK: - Model
 struct Student {
-    var name : String?
-    var subjects : [Subject]?
+    var name : String
+    var subjects : [Subject]
 }
 
 struct Subject {
@@ -13,25 +13,39 @@ struct Subject {
 
 //MARK: - ViewModel
 class ViewModel {
-    var studentDatas : [Student] = []
+    private var studentDatas : [Student] = []
+    
+    func show() {
+        print(studentDatas)
+    }
     
     /// 학생 추가
-    func add(student : String) {
-        
+    func add(studentName : String) {
+        let studentData = Student(name: studentName, subjects: [])
+        studentDatas.append(studentData)
     }
+    
     /// 성적 추가
-    func add(student : String, subject: String , score : String) {
-        
+    func add(studentName : String, subjectName: String , score : String) {
+        var idx = getStudentIdx(studentName: studentName)
+        let subjectData = Subject(name: subjectName, score: score)
+        studentDatas[idx].subjects.append(subjectData)
+
     }
     
     /// 학생 삭제
-    func del(student: String){
+    func del(studentName: String){
+        var idx = getStudentIdx(studentName: studentName)
         
+        studentDatas.remove(at: idx)
     }
     
     /// 성적 삭제
-    func del(student: String, subject: String){
+    func del(studentName: String, subjectName: String){
+        var studentIdx = getStudentIdx(studentName: studentName)
+        var subjectIdx = getSubjectIdx(studentName: studentName, subjectName: subjectName, studentIdx: studentIdx)
         
+        studentDatas[studentIdx].subjects.remove(at: subjectIdx)
     }
     
     
@@ -46,21 +60,48 @@ class ViewModel {
         return true
     }
     
-    func isExistStudent(student : String) -> Bool {
+    func isExistStudent(studentName : String) -> Bool {
         
         return false
     }
-    func isExistScore(name: String) -> Bool {
+    func isExistScore(subjectName: String) -> Bool {
         
         return false
     }
-    func findStudent(student: String) -> Student {
+    func findStudent(studentName: String) -> Student {
         
-        return Student()
+        return Student(name: "", subjects: [])
     }
     func average(subjects : [Subject] ) -> Double {
         
         return 1
+    }
+    
+    func getStudentIdx(studentName: String) -> Int {
+        var idx = -1
+        
+        for (index,studentData) in studentDatas.enumerated() {
+            if studentData.name == studentName {
+               idx = index
+            }
+        }
+        
+        return idx
+    }
+    
+    func getSubjectIdx(studentName : String, subjectName : String, studentIdx: Int) -> Int {
+        var idx = studentIdx
+        var subjectIdx = 0
+        
+        let subjects = studentDatas[idx].subjects
+        
+        for (index,subject) in subjects.enumerated() {
+            if subject.name == subjectName {
+                subjectIdx = index
+            }
+        }
+        
+        return subjectIdx
     }
 }
 
@@ -100,6 +141,7 @@ class CreditManager {
                 break
             default:
                 print("뭔가 입력이 잘못되었습니다. 1~5 사이의 숫자 혹은 X를 입력해주세요.")
+                viewModel.show()
                 break
             }
         }
@@ -114,11 +156,11 @@ class CreditManager {
                 print("입력이 잘못되었습니다. 다시 확인해주세요.")
             }
             else {
-                if viewModel.isExistStudent(student: name) {
+                if viewModel.isExistStudent(studentName: name) {
                     print("\(name)은 이미 존재하는 학생입니다. 추가하지 않습니다.")
                 }
                 else {
-                    viewModel.add(student: name)
+                    viewModel.add(studentName: name)
                     print("\(name) 학생을 추가했습니다.")
                 }
             }
@@ -137,8 +179,8 @@ class CreditManager {
                 print("입력이 잘못되었습니다. 다시 확인해주세요.")
             }
             else {
-                if viewModel.isExistStudent(student: name) {
-                    viewModel.del(student: name)
+                if viewModel.isExistStudent(studentName: name) {
+                    viewModel.del(studentName: name)
                 }
                 else {
                     print("\(name) 학생을 찾지 못했습니다.")
@@ -159,7 +201,7 @@ class CreditManager {
         
         if let input = input {
             if viewModel.isAddScoreInput(input: input) {
-                viewModel.add(student: input[0], subject: input[1] ,score: input[2])
+                viewModel.add(studentName: input[0], subjectName: input[1] ,score: input[2])
                 print("\(input[0]) 학생의 \(input[1]) 과목이 \(input[2])로 추가(변경)되었습니다.")
             }else {
                 print("입력이 잘못되었습니다. 다시 확인해주세요.")
@@ -178,9 +220,9 @@ class CreditManager {
         let input : [String]? = readLine()?.split(separator: " ").map{String($0)}
         if let input = input {
             if viewModel.isDelScoreInput(input: input) {
-                if viewModel.isExistStudent(student: input[0]){
-                    if viewModel.isExistScore(name: input[1]){
-                        viewModel.del(student: input[0], subject: input[1])
+                if viewModel.isExistStudent(studentName: input[0]){
+                    if viewModel.isExistScore(subjectName: input[1]){
+                        viewModel.del(studentName: input[0], subjectName: input[1])
                     }
                     else {
                         print("\(input) 과목을 찾지 못했습니다.")
@@ -204,17 +246,13 @@ class CreditManager {
         print("평점을 알고싶은 학생의 이름을 입력해주세요.")
         let name = readLine()
         if let name = name {
-            if viewModel.isExistStudent(student: name){
-                let student = viewModel.findStudent(student: name)
-                if let subjects = student.subjects {
-                    for subject in subjects {
-                        print("\(subject.name): \(subject.score)")
-                    }
-                    print("평점 : \(viewModel.average(subjects: subjects))")
+            if viewModel.isExistStudent(studentName: name){
+                let student = viewModel.findStudent(studentName: name)
+                let subjects = student.subjects
+                for subject in subjects {
+                    print("\(subject.name): \(subject.score)")
                 }
-                else {
-                    print("성적이 없습니다.")
-                }
+                print("평점 : \(viewModel.average(subjects: subjects))")
             }
             else {
                 print("\(name) 학생을 찾지 못했습니다.")
