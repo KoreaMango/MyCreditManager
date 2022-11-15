@@ -52,29 +52,76 @@ class ViewModel {
     
     //MARK: - 로직
     func isAddScoreInput(input : [String]) -> Bool {
+        if input.count == 3 {
+            if isExistStudent(studentName: input[0]){
+                // 여기에 추가 조건 등록
+                return true
+            }
+        }
+        return false
         
-        return true
     }
+    
     func isDelScoreInput(input : [String]) -> Bool {
-        
-        return true
+        if input.count == 2 {
+            return true
+        }
+        return false
     }
     
     func isExistStudent(studentName : String) -> Bool {
-        
+       return findStudent(studentName: studentName) != nil
+    }
+    
+    func isExistScore(studentName: String, subjectName: String) -> Bool {
+        if let student = findStudent(studentName: studentName) {
+            let subjects = student.subjects
+            for subject in subjects {
+                if subjectName == subject.name {
+                    return true
+                }
+            }
+        }
         return false
     }
-    func isExistScore(subjectName: String) -> Bool {
-        
-        return false
+    
+    func findStudent(studentName: String) -> Student? {
+        for studentData in studentDatas {
+            if studentData.name == studentName {
+                return studentData
+            }
+        }
+        return nil
     }
-    func findStudent(studentName: String) -> Student {
-        
-        return Student(name: "", subjects: [])
-    }
+    
     func average(subjects : [Subject] ) -> Double {
+        let sum = subjects
+            .map{ subject in
+                if subject.score == "A+" {
+                    return 4.5
+                } else if subject.score == "A" {
+                    return 4.0
+                } else if subject.score == "B+" {
+                    return 3.5
+                } else if subject.score == "B" {
+                    return 3.0
+                } else if subject.score == "C+" {
+                    return 2.5
+                } else if subject.score == "C" {
+                    return 2.0
+                } else if subject.score == "D+" {
+                    return 1.5
+                } else if subject.score == "D" {
+                    return 1.0
+                } else {
+                    return 0
+                }
+            }
+            .reduce(0.0) {$0 + $1}
         
-        return 1
+        let result : Double = Double(sum) / Double(subjects.count)
+        
+        return result
     }
     
     func getStudentIdx(studentName: String) -> Int {
@@ -181,6 +228,7 @@ class CreditManager {
             else {
                 if viewModel.isExistStudent(studentName: name) {
                     viewModel.del(studentName: name)
+                    print("\(name) 학생을 삭제했습니다.")
                 }
                 else {
                     print("\(name) 학생을 찾지 못했습니다.")
@@ -221,8 +269,9 @@ class CreditManager {
         if let input = input {
             if viewModel.isDelScoreInput(input: input) {
                 if viewModel.isExistStudent(studentName: input[0]){
-                    if viewModel.isExistScore(subjectName: input[1]){
+                    if viewModel.isExistScore(studentName: input[0],subjectName: input[1]){
                         viewModel.del(studentName: input[0], subjectName: input[1])
+                        print("\(input[0]) 학생의 \(input[1]) 과목의 성적이 삭제되었습니다.")
                     }
                     else {
                         print("\(input) 과목을 찾지 못했습니다.")
@@ -248,7 +297,7 @@ class CreditManager {
         if let name = name {
             if viewModel.isExistStudent(studentName: name){
                 let student = viewModel.findStudent(studentName: name)
-                let subjects = student.subjects
+                let subjects = student?.subjects ?? []
                 for subject in subjects {
                     print("\(subject.name): \(subject.score)")
                 }
